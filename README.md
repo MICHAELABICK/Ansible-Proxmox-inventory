@@ -10,13 +10,15 @@ It will generate an inventory on the fly with all your VMs stored in your Proxmo
 
 ### Requirements
 
-Resolvable VM names: the inventory script collects the VM names (and not IP addresses!). That's why your computer must be able to resolve these names; either with the DNS server or your */etc/hosts* 
+* Resolvable VM names: the inventory script collects the VM names (and not IP addresses!). That's why your computer must be able to resolve these names; either with the DNS server or your */etc/hosts*
+* Alternatively, qemu-guest-agent on each Proxmox VM
 
 
 ### Features
 
 - **ProxmoxVE cluster**: if your have a ProxmoxVE cluster, it will gather the whole VM list from your cluster
 - **Advanced filtering**: you can filter the VM list based in their status or a custom tag included in the `Notes` field
+- **Qemu interfaces ip detection**: You should have [qemu-guest-agent](https://pve.proxmox.com/wiki/Qemu-guest-agent) installed and activated 
 
 
 ### Changelog:

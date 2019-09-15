@@ -127,7 +127,7 @@ class ProxmoxAPI(object):
         elif not options.password:
             raise Exception(
                 'Missing mandatory parameter --password (or PROXMOX_PASSWORD or "password" key in config file).')
-        
+
         # URL should end with a trailing slash
         if not options.url.endswith("/"):
             options.url = options.url + "/"
@@ -172,6 +172,13 @@ class ProxmoxAPI(object):
 
     def node_qemu_description(self, node, vm):
         return self.vm_description_by_type(node, vm, 'qemu')
+
+    def node_qemu_network_interfaces(self, node, vm):
+        try:
+            return self.get('api2/json/nodes/{0}/qemu/{1}/agent/network-get-interfaces'.format(node, vm))['result']
+        except Exception as e:
+            return None
+            # print(e)
 
     def node_lxc(self, node):
         return self.vms_by_type(node, 'lxc')
@@ -275,6 +282,18 @@ def main_list(options, config_path):
                     }
                 results['running']['hosts'] += [vm]
 
+            if options.default_interface and status == 'running':
+                if type == 'qemu':
+                    interfaces = proxmox_api.node_qemu_network_interfaces(
+                        node, vmid)
+
+                if interfaces:
+                    for vm_interface in interfaces:
+                        # return the first non-loopback interface
+                        if vm_interface['name'] != 'lo':
+                            results['_meta']['hostvars'][vm]['ansible_host'] = vm_interface['ip-addresses'][0]['ip-address']
+                            break
+
             results['_meta']['hostvars'][vm].update(metadata)
 
     # pools
@@ -322,6 +341,12 @@ def main():
     parser.add_option('--url', default=os.environ.get('PROXMOX_URL'), dest='url')
     parser.add_option('--username', default=os.environ.get('PROXMOX_USERNAME'), dest='username')
     parser.add_option('--password', default=os.environ.get('PROXMOX_PASSWORD'), dest='password')
+    parser.add_option(
+            '--qemu_default_interface',
+            action="store_true",
+            default=False,
+            dest='default_interface'
+        )
     parser.add_option('--pretty', action="store_true", default=False, dest='pretty')
     parser.add_option('--trust-invalid-certs', action="store_false", default=bool_validate_cert, dest='validate')
     (options, args) = parser.parse_args()
